@@ -8,15 +8,8 @@ const urls = [
   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
   
   const handleFailedRequest = async (url, index) => {
-    let failedUrl = urls.splice(index, 1)[0];
-    if(preventLoop) {
-        const randomNumber = Math.floor(Math.random() * 10) + 11;
-        failedUrl = failedUrl.replace(/-\d+|0/g, randomNumber)
-        console.log(`API call ${url} failed, moving to the end of the array with ${randomNumber} param`);
-    }else{
-        console.log(`API call ${url} failed, moving to the end of the array`);
-    }
-    urls.push(failedUrl);
+    console.log(`API call ${url} failed, moving to the end of the array`);
+    urls.push(urls.splice(index, 1)[0]);
     await delay(1000);
   };
   
@@ -40,6 +33,4 @@ const urls = [
       }
     }
   };
-  
-  const preventLoop = false;
   makeAPICalls();
