@@ -3,10 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My JavaScript</title>
-    <script src="https://jaysinhgo.github.io/js/app.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.15/dist/tailwind.min.css" rel="stylesheet">
+    <title>Sequential API Calls</title>
+    <style>
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-in-out;
+        }
+    </style>
 </head>
-<body>
-    <h1>Check your console.</h1>
+<body class="bg-gray-100">
+    <header class="fixed-header w-full bg-blue-500 p-4 text-white">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Sequential API Calls</h1>
+            <div class="flex items-center">
+                <button id="startButton" class="bg-green-200 text-white py-2 px-3 rounded-full hover:bg-green-400">
+                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="green">
+                        <circle cx="12" cy="12" r="11" />
+                        <polygon points="10,7 10,17 19,12" fill="white" />
+                    </svg>
+                </button>
+                <button id="stopButton" class="bg-red-200 text-white py-2 px-3 rounded-full hover:bg-red-400 ml-4" style="display: none;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="red">
+                        <circle cx="12" cy="12" r="11" />
+                    </svg>
+                </button>
+                <button id="resetButton" class="bg-blue-500 text-white py-2 px-3 rounded-full hover:bg-blue-600 ml-4" style="display: none;">
+                    Reset
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 md:px-8 lg:px-16 py-8">
+        <div class="bg-white rounded-lg p-6 shadow-md" id="arrayContainer">
+            <p class="text-gray-600 mt-2">
+                This app demonstrates sequential API calls using an array of API URLs with random positive and negative integer endpoints. Only API URLs with positive integer endpoints will succeed.
+            </p>
+            <div class="bg-gray-200 p-4 rounded-md mt-4 overflow-x-auto">
+                <pre id="randomArray" class="text-sm"></pre>
+            </div>
+        </div>
+        
+        <!-- Status container for API responses -->
+        <div id="statusContainer" style="display: none;">
+            <h2 class="text-xl font-semibold mb-4">API Status</h2>
+            <div id="statusList" class="space-y-2"></div>
+        </div>
+    </main>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const startButton = document.getElementById("startButton");
+            const stopButton = document.getElementById("stopButton");
+            const resetButton = document.getElementById("resetButton");
+            const arrayContainer = document.getElementById("arrayContainer");
+            const randomArrayElement = document.getElementById("randomArray");
+            const statusContainer = document.getElementById("statusContainer");
+            const statusList = document.getElementById("statusList");
+            
+            let currentRandomArray = generateRandomArray(5, -9, 9); // Positive and negative integers
+            let currentIndex = 0; // Index to keep track of the current API call
+            let isApiRunning = false; // Flag to track if API calls are in progress
+            
+            // Display the initial array on page load
+            displayArray(currentRandomArray);
+            
+            startButton.addEventListener("click", () => {
+                startButton.style.display = "none";
+                stopButton.style.display = "block";
+                isApiRunning = true;
+                arrayContainer.style.display = "none"; // Hide the arrayContainer on start
+                statusContainer.style.display = "block"; // Show the status container on start
+                callApiAtIndex(currentIndex, true); // Call the first API with 500ms delay
+            });
+            
+            stopButton.addEventListener("click", () => {
+                stopButton.style.display = "none";
+                startButton.style.display = "block";
+                isApiRunning = false;
+                arrayContainer.style.display = "block"; // Show the arrayContainer on stop
+                statusContainer.style.display = "none"; // Hide the status container on stop
+            });
+            
+            resetButton.addEventListener("click", () => {
+                location.reload(); // Refresh the page to reset
+            });
+            
+            function generateRandomArray(length, min, max) {
+                return Array.from({ length }, () => `https://pokeapi.co/api/v2/type/${getRandomEndpoint(min, max)}`);
+            }
+            
+            function getRandomEndpoint(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+            
+            async function callApiAtIndex(index, isFirstCall = false) {
+                if (!isApiRunning) {
+                    return;
+                }
+            
+                if (index >= currentRandomArray.length) {
+                    // All APIs have been called
+                    currentIndex = 0;
+                    displayArray(currentRandomArray); // Display the updated array
+                    randomArrayElement.textContent = "All APIs called!";
+                    startButton.style.display = "none";
+                    stopButton.style.display = "none";
+                    resetButton.style.display = "block"; // Show the reset button
+                    isApiRunning = false;
+                    arrayContainer.style.display = "block"; // Show the arrayContainer when all APIs are called
+                    statusContainer.style.display = "none"; // Hide the status container when all APIs are called
+                    return;
+                }
+            
+                const apiUrl = currentRandomArray[index];
+                try {
+                    const response = await fetch(apiUrl);
+                    const statusItem = document.createElement("div");
+                    if (response.ok) {
+                        // API call succeeded, move to the next index
+                        currentIndex++;
+                        statusItem.innerHTML = `<span class="text-green-600">😄</span> API Successful: ${apiUrl}`;
+                        statusItem.classList.add("bg-green-200", "p-4", "rounded-md", "animate-fade-in");
+                    } else {
+                        // API call failed, move the URL to the end of the array
+                        currentRandomArray.push(apiUrl);
+                        currentRandomArray.splice(index, 1);
+                        statusItem.innerHTML = `<span class="text-red-600">😡</span> API Failed: ${apiUrl}`;
+                        statusItem.classList.add("bg-red-200", "p-4", "rounded-md", "animate-fade-in");
+                    }
+                    statusList.insertBefore(statusItem, statusList.firstChild); // Insert new status at the top
+                    displayArray(currentRandomArray); // Display the updated array
+                    const delayDuration = isFirstCall ? 500 : 1500; // 500ms delay for first call, 1.5s delay for the rest
+                    await delay(delayDuration);
+                    callApiAtIndex(currentIndex); // Call the next API
+                } catch (error) {
+                    console.error("Error:", error);
+                    // Handle error if needed
+                }
+            }
+            
+            function displayArray(array) {
+                randomArrayElement.textContent = "";
+                array.forEach(item => {
+                    const element = document.createElement("div");
+                    element.textContent = item;
+                    element.classList.add("text-green-500");
+                    randomArrayElement.appendChild(element);
+                });
+            }
+            
+            function delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        });
+    </script>
 </body>
 </html>
