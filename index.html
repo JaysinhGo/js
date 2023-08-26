@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.15/dist/tailwind.min.css" rel="stylesheet">
-    <title>Sequential API Calls.</title>
+    <title>Sequential API Calls</title>
     <style>
         @keyframes fade-in {
             from { opacity: 0; }
@@ -84,6 +84,10 @@
                 stopButton.style.display = "none";
                 startButton.style.display = "block";
                 isApiRunning = false;
+                currentRandomArray = generateRandomArray(5, -9, 9); // Generate a new random array
+                currentIndex = 0; // Reset the index to start from the beginning
+                clearStatusList(); // Clear the status list
+                displayArray(currentRandomArray);
                 arrayContainer.style.display = "block"; // Show the arrayContainer on stop
                 statusContainer.style.display = "none"; // Hide the status container on stop
             });
@@ -98,6 +102,12 @@
             
             function getRandomEndpoint(min, max) {
                 return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            function clearStatusList() {
+                while (statusList.firstChild) {
+                    statusList.removeChild(statusList.firstChild);
+                }
             }
             
             async function callApiAtIndex(index, isFirstCall = false) {
